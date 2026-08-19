@@ -1,0 +1,6 @@
+{
+  "name": "Premium IP Checker",
+  "description": "Modern IP Intelligence & IP Checker platform inspired by IPLogs with real-time threat detection, latency testing, and export features.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
