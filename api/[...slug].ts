@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import app from "../server/app";
+import app from "../lib/app";
 
 // Catch-all so every /api/* request reaches this function with its original
 // path intact. The Express app is invoked from inside a real handler rather
