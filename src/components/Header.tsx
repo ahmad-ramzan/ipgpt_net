@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ShieldCheck, Cpu, Zap } from "lucide-react";
+import { Cpu, Zap } from "lucide-react";
 import { fetchMyIp } from "../services/api";
 
 interface HeaderProps {
@@ -20,8 +20,14 @@ export const Header: React.FC<HeaderProps> = ({ onCheckMyIp, isLoading }) => {
         {/* Logo & Brand (Left) */}
         <a href="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-indigo-600 to-purple-600 p-[1px] shadow-lg shadow-cyan-500/20 shrink-0">
-            <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-cyan-400 animate-pulse" />
+            <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center overflow-hidden">
+              <img
+                src="/logo.jpeg"
+                alt="Premium IP Checker"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover rounded-[11px]"
+              />
             </div>
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full blur-[2px] animate-ping opacity-75" />
           </div>
