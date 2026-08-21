@@ -1,6 +1,9 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import app from "../server/app";
 
 // Catch-all so every /api/* request reaches this function with its original
-// path intact (a rewrite to a fixed filename would rewrite req.url too, and
-// Express would then fail to match /api/ping, /api/check-proxy, etc).
-export default app;
+// path intact. The Express app is invoked from inside a real handler rather
+// than exported directly, which the Vercel runtime handles reliably.
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  return (app as unknown as (rq: VercelRequest, rs: VercelResponse) => void)(req, res);
+}
