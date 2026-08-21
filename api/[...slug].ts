@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import app from "./_app";
+import app from "./core";
 
 // Catch-all so every /api/* request reaches this function with its original
 // path intact. The app module lives inside api/ because this project's
