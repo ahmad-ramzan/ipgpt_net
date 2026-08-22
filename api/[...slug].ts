@@ -133,55 +133,57 @@ app.get("/api/speedtest-file", (req, res) => {
 
 app.get("/api/my-ip", async (req, res) => {
   try {
-    const xForwardedFor = req.headers["x-forwarded-for"];
-    let clientIp = "";
+    const header = (name: string): string => {
+      const v = req.headers[name];
+      const raw = Array.isArray(v) ? v[0] : v;
+      return (raw || "").split(",")[0].trim();
+    };
 
-    if (typeof xForwardedFor === "string") {
-      clientIp = xForwardedFor.split(",")[0].trim();
-    } else if (Array.isArray(xForwardedFor)) {
-      clientIp = xForwardedFor[0].trim();
-    } else {
-      clientIp = req.socket.remoteAddress || "";
-    }
+    // Vercel sets x-vercel-forwarded-for; other proxies set the standard ones.
+    let clientIp =
+      header("x-vercel-forwarded-for") ||
+      header("x-forwarded-for") ||
+      header("x-real-ip") ||
+      req.socket.remoteAddress ||
+      "";
 
-    // Clean up local or private internal container IPs
-    if (
-      !clientIp ||
-      clientIp === "::1" ||
-      clientIp === "127.0.0.1" ||
-      clientIp.startsWith("::ffff:127.") ||
-      clientIp.startsWith("10.") ||
-      clientIp.startsWith("172.") ||
-      clientIp.startsWith("192.168.")
-    ) {
+    clientIp = clientIp.replace(/^::ffff:/, "");
+
+    // Only 172.16-172.31 is private - 172.58.x.x and friends are real public
+    // addresses, so a plain "172." prefix check would reject genuine clients.
+    const isPrivate = (ip: string) =>
+      !ip ||
+      ip === "::1" ||
+      ip.startsWith("127.") ||
+      ip.startsWith("10.") ||
+      ip.startsWith("192.168.") ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+      /^(fc|fd)/i.test(ip);
+
+    if (isPrivate(clientIp)) {
+      if (process.env.VERCEL) {
+        // Never ask an outside service for "our" IP here: the answer would be
+        // the server's own address, which we would then show as the visitor's.
+        res.json({ ip: null });
+        return;
+      }
+
+      // Local development only: the socket address is the loopback, so look up
+      // this machine's public IP to make the app usable while developing.
       try {
-        // Fetch public IP from IPLogs (https://iplogs.com/docs)
-        const iplogsRes = await fetch("https://ip.iplogs.com", {
-          headers: { "User-Agent": "Jesewe-Proxy-Checker/1.0" },
-        });
-        if (iplogsRes.ok) {
-          const textIp = (await iplogsRes.text()).trim();
-          if (textIp && /^[\d\.\:a-fA-F]+$/.test(textIp)) {
-            clientIp = textIp;
-          }
+        const ipifyRes = await fetch("https://api.ipify.org?format=json");
+        if (ipifyRes.ok) {
+          const data: any = await ipifyRes.json();
+          if (data.ip) clientIp = data.ip;
         }
-      } catch (e) {
-        // Fallback to ipify if iplogs plain IP service is unavailable
-        try {
-          const ipifyRes = await fetch("https://api.ipify.org?format=json");
-          if (ipifyRes.ok) {
-            const data = await ipifyRes.json();
-            if (data.ip) clientIp = data.ip;
-          }
-        } catch (e2) {}
+      } catch {
+        // Leave clientIp as-is; reported as null below.
       }
     }
 
-    if (!clientIp) clientIp = "210.1.247.224"; // Default sample IP if offline
-
-    res.json({ ip: clientIp });
-  } catch (err: any) {
-    res.json({ ip: "210.1.247.224" });
+    res.json({ ip: isPrivate(clientIp) ? null : clientIp });
+  } catch {
+    res.json({ ip: null });
   }
 });
 
